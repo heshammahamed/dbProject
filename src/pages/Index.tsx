@@ -5,7 +5,7 @@ import SearchBar from "@/components/SearchBar";
 import BooksList from "@/components/BooksList";
 import { Book } from "@/types/book";
 import { searchBooks } from "@/services/bookService";
-import { Books } from "lucide-react";
+import { Book as BookIcon } from "lucide-react";
 
 const Index = () => {
   const [searchResults, setSearchResults] = useState<Book[]>([]);
@@ -47,7 +47,7 @@ const Index = () => {
       <header className="bg-white py-8 border-b border-library-100">
         <div className="container px-4 mx-auto">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Books className="h-8 w-8 text-library-600" />
+            <BookIcon className="h-8 w-8 text-library-600" />
             <h1 className="text-3xl font-bold text-center text-gray-800">Library Book Finder</h1>
           </div>
           <p className="text-center text-gray-600 mb-8">
@@ -86,7 +86,7 @@ const Index = () => {
             ) : hasSearched ? (
               <div className="text-center py-12">
                 <div className="bg-library-50 rounded-lg p-8 inline-block">
-                  <Books className="h-12 w-12 text-library-300 mx-auto mb-4" />
+                  <BookIcon className="h-12 w-12 text-library-300 mx-auto mb-4" />
                   <p className="text-gray-600">
                     No books match your search. Try different keywords.
                   </p>
@@ -94,7 +94,7 @@ const Index = () => {
               </div>
             ) : (
               <div className="text-center py-16">
-                <Books className="h-16 w-16 text-library-200 mx-auto mb-4" />
+                <BookIcon className="h-16 w-16 text-library-200 mx-auto mb-4" />
                 <p className="text-xl text-gray-500">
                   Enter a search term to discover books
                 </p>
