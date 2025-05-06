@@ -22,12 +22,24 @@ const BorrowedBooksTab = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setBorrowedBooks(getAllBorrowedBooks());
-      setIsLoading(false);
-    }, 500);
-  }, []);
+    const fetchBooks = async () => {
+      try {
+        const books = await getAllBorrowedBooks();
+        setBorrowedBooks(books);
+      } catch (error) {
+        console.error("Error fetching borrowed books:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load borrowed books. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, [toast]);
 
   const handleReturnBook = (borrowId: string) => {
     const result = returnBook(borrowId);
@@ -44,6 +56,12 @@ const BorrowedBooksTab = () => {
           item.id === borrowId ? { ...item, returnDate: new Date() } : item
         )
       );
+    } else {
+      toast({
+        title: "Action not available",
+        description: "This feature is currently in development with the API.",
+        variant: "destructive"
+      });
     }
   };
 

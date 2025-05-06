@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { searchBooks } from "@/services/bookService";
+import { searchBooks, deleteBook } from "@/services/bookService";
 import { Book } from "@/types/book";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,15 +42,26 @@ const EditBooksTab = () => {
     }
   };
 
-  const handleDelete = (book: Book) => {
-    // Simulate delete API call
-    toast({
-      title: "Book Deleted",
-      description: `"${book.title}" has been deleted from the library.`,
-    });
-    
-    // Remove from local state
-    setBooks(books.filter(b => b.id !== book.id));
+  const handleDelete = async (book: Book) => {
+    try {
+      await deleteBook(book.id);
+      
+      toast({
+        title: "Book Deleted",
+        description: `"${book.title}" has been deleted from the library.`,
+      });
+      
+      // Remove from local state
+      setBooks(books.filter(b => b.id !== book.id));
+    } catch (error: any) {
+      const errorMessage = error.message || "An error occurred";
+      
+      toast({
+        title: "Delete Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEdit = (book: Book) => {
@@ -93,9 +104,9 @@ const EditBooksTab = () => {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Author</TableHead>
-                  <TableHead>Year</TableHead>
                   <TableHead>Genre</TableHead>
-                  <TableHead>Copies</TableHead>
+                  <TableHead>Total Copies</TableHead>
+                  <TableHead>Available</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -104,9 +115,9 @@ const EditBooksTab = () => {
                   <TableRow key={book.id}>
                     <TableCell className="font-medium">{book.title}</TableCell>
                     <TableCell>{book.author}</TableCell>
-                    <TableCell>{book.publishedYear || "N/A"}</TableCell>
                     <TableCell>{book.genre || "Uncategorized"}</TableCell>
-                    <TableCell>{book.copies || 1}</TableCell>
+                    <TableCell>{book.copies?.total || 1}</TableCell>
+                    <TableCell>{book.copies?.available || 1}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 

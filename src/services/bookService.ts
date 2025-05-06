@@ -1,81 +1,143 @@
 
 import { Book } from "@/types/book";
 
-// Mock data for initial development
-const mockBooks: Book[] = [
-  {
-    id: "1",
-    title: "The Great Gatsby",
-    author: "F. Scott Fitzgerald",
-    description: "A novel about the decadence and excess of the Jazz Age, as told through the tragic story of Jay Gatsby and his pursuit of Daisy Buchanan.",
-    coverImage: "https://m.media-amazon.com/images/I/71FTb9X6wsL._AC_UF1000,1000_QL80_.jpg",
-    publishedYear: 1925,
-    genre: "Classic Fiction"
-  },
-  {
-    id: "2",
-    title: "To Kill a Mockingbird",
-    author: "Harper Lee",
-    description: "The story of racial injustice and the loss of innocence in a small Southern town, seen through the eyes of a young girl named Scout Finch.",
-    coverImage: "https://m.media-amazon.com/images/I/71FxgtFKcQL._AC_UF1000,1000_QL80_.jpg",
-    publishedYear: 1960,
-    genre: "Classic Fiction"
-  },
-  {
-    id: "3",
-    title: "1984",
-    author: "George Orwell",
-    description: "A dystopian novel set in a totalitarian society where critical thought is suppressed, independent thinking is outlawed, and mass surveillance rules.",
-    coverImage: "https://m.media-amazon.com/images/I/71kxa1-0mfL._AC_UF1000,1000_QL80_.jpg",
-    publishedYear: 1949,
-    genre: "Dystopian Fiction"
-  },
-  {
-    id: "4",
-    title: "The Hobbit",
-    author: "J.R.R. Tolkien",
-    description: "The adventure of Bilbo Baggins, a home-loving hobbit who is swept into a quest to reclaim the dwarves' treasure from the dragon Smaug.",
-    coverImage: "https://m.media-amazon.com/images/I/710+HcoP38L._AC_UF1000,1000_QL80_.jpg",
-    publishedYear: 1937,
-    genre: "Fantasy"
-  },
-  {
-    id: "5",
-    title: "Pride and Prejudice",
-    author: "Jane Austen",
-    description: "The story of Elizabeth Bennet and her complicated relationship with the proud, wealthy, and seemingly rude Mr. Darcy.",
-    coverImage: "https://m.media-amazon.com/images/I/71Q1tPupKjL._AC_UF1000,1000_QL80_.jpg",
-    publishedYear: 1813,
-    genre: "Classic Romance"
-  },
-  {
-    id: "6",
-    title: "Harry Potter and the Sorcerer's Stone",
-    author: "J.K. Rowling",
-    description: "The first novel in the Harry Potter series, which follows the life of a young wizard, Harry Potter, and his friends at the Hogwarts School of Witchcraft and Wizardry.",
-    coverImage: "https://m.media-amazon.com/images/I/81iqZ2HHD-L._AC_UF1000,1000_QL80_.jpg",
-    publishedYear: 1997,
-    genre: "Fantasy"
-  }
-];
+const API_URL = "http://localhost:9000";
 
-// Function to simulate searching for books
+// Function to search for books
 export const searchBooks = async (query: string): Promise<Book[]> => {
   console.log("Searching for books with query:", query);
-  
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
   
   if (!query) {
     return [];
   }
   
-  // Filter books based on query (case-insensitive search on title, author, and description)
-  const lowerCaseQuery = query.toLowerCase();
-  return mockBooks.filter(book => 
-    book.title.toLowerCase().includes(lowerCaseQuery) ||
-    book.author.toLowerCase().includes(lowerCaseQuery) ||
-    book.description.toLowerCase().includes(lowerCaseQuery) ||
-    (book.genre && book.genre.toLowerCase().includes(lowerCaseQuery))
-  );
+  try {
+    const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Map API response to our Book type
+    return data.map((book: any) => ({
+      id: book.BookID.toString(),
+      title: book.Title,
+      author: book.AuthorName,
+      description: book.CategoryName, // Using category as description for now
+      coverImage: "https://m.media-amazon.com/images/I/71FTb9X6wsL._AC_UF1000,1000_QL80_.jpg", // Default image
+      publishedYear: new Date().getFullYear(), // Default year
+      genre: book.CategoryName,
+      copies: {
+        total: book.TotalCopies,
+        available: book.AvailableCopies
+      }
+    }));
+  } catch (error) {
+    console.error("Error fetching books:", error);
+    throw error;
+  }
+};
+
+// Add a new book function
+export const addBook = async (bookData: {
+  title: string;
+  authorId: number;
+  categoryId: number;
+  totalCopies: number;
+}): Promise<Book> => {
+  try {
+    const response = await fetch(`${API_URL}/books`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bookData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    return {
+      id: data.BookID.toString(),
+      title: data.Title,
+      author: data.AuthorName,
+      description: data.CategoryName,
+      coverImage: "https://m.media-amazon.com/images/I/71FTb9X6wsL._AC_UF1000,1000_QL80_.jpg", // Default image
+      publishedYear: new Date().getFullYear(),
+      genre: data.CategoryName,
+      copies: {
+        total: data.TotalCopies,
+        available: data.AvailableCopies
+      }
+    };
+  } catch (error) {
+    console.error("Error adding book:", error);
+    throw error;
+  }
+};
+
+// Update a book
+export const updateBook = async (
+  id: string, 
+  bookData: {
+    title: string;
+    authorId: number;
+    categoryId: number;
+    totalCopies: number;
+  }
+): Promise<Book> => {
+  try {
+    const response = await fetch(`${API_URL}/books/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bookData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    return {
+      id: data.BookID.toString(),
+      title: data.Title,
+      author: data.AuthorName,
+      description: data.CategoryName,
+      coverImage: "https://m.media-amazon.com/images/I/71FTb9X6wsL._AC_UF1000,1000_QL80_.jpg",
+      publishedYear: new Date().getFullYear(),
+      genre: data.CategoryName,
+      copies: {
+        total: data.TotalCopies,
+        available: data.AvailableCopies
+      }
+    };
+  } catch (error) {
+    console.error("Error updating book:", error);
+    throw error;
+  }
+};
+
+// Delete a book
+export const deleteBook = async (id: string): Promise<void> => {
+  try {
+    const response = await fetch(`${API_URL}/books/${id}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Error: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Error deleting book:", error);
+    throw error;
+  }
 };

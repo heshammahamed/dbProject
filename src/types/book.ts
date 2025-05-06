@@ -7,5 +7,8 @@ export interface Book {
   coverImage: string;
   publishedYear?: number;
   genre?: string;
-  copies?: number;
+  copies?: {
+    total: number;
+    available: number;
+  };
 }

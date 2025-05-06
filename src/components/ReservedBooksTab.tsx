@@ -22,21 +22,34 @@ const ReservedBooksTab = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setReservedBooks(getAllReservedBooks());
-      setIsLoading(false);
-    }, 500);
-  }, []);
+    const fetchBooks = async () => {
+      try {
+        const books = await getAllReservedBooks();
+        setReservedBooks(books);
+      } catch (error) {
+        console.error("Error fetching reserved books:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load reserved books. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, [toast]);
 
   const handleCancelReservation = (reservationId: string) => {
     // In a real app, we would call an API to cancel the reservation
     toast({
-      title: "Reservation Cancelled",
-      description: "The book reservation has been cancelled.",
+      title: "Action not available",
+      description: "This feature is currently in development with the API.",
+      variant: "destructive"
     });
     
-    // Update local state
+    // For now, just update UI
     setReservedBooks(prev => prev.filter(item => item.id !== reservationId));
   };
 
