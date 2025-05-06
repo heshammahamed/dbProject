@@ -9,6 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { getUserById } from "@/services/userService";
+import UserProfileModal from "./UserProfileModal";
 
 interface ExistingUserFormProps {
   onCancel: () => void;
@@ -25,6 +27,7 @@ const ExistingUserForm = ({
 }: ExistingUserFormProps) => {
   const [userId, setUserId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,11 +44,25 @@ const ExistingUserForm = ({
 
     setIsSubmitting(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
-      onSubmit(userId);
+    // Look up the user
+    const user = getUserById(userId);
+    
+    if (user) {
+      setShowUserProfile(true);
       setIsSubmitting(false);
-    }, 500);
+    } else {
+      toast({
+        title: "User Not Found",
+        description: "No member found with this ID",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleProfileClose = () => {
+    setShowUserProfile(false);
+    onSubmit(userId);
   };
 
   const getActionText = () => {
@@ -91,6 +108,16 @@ const ExistingUserForm = ({
           </Button>
         </DialogFooter>
       </form>
+
+      {showUserProfile && (
+        <UserProfileModal
+          isOpen={showUserProfile}
+          onClose={handleProfileClose}
+          user={getUserById(userId)}
+          actionType={actionType}
+          book={book}
+        />
+      )}
     </>
   );
 };

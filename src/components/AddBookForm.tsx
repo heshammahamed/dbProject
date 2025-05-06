@@ -1,0 +1,235 @@
+
+import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Book as BookIcon, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const formSchema = z.object({
+  title: z.string().min(1, { message: "Title is required" }),
+  author: z.string().min(1, { message: "Author is required" }),
+  description: z.string().min(1, { message: "Description is required" }),
+  coverImage: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal("")),
+  publishedYear: z.coerce.number().int().min(1, { message: "Year must be a positive number" }).optional(),
+  genre: z.string().optional(),
+  copies: z.coerce.number().int().min(1, { message: "Copies must be at least 1" }),
+});
+
+const AddBookForm = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      author: "",
+      description: "",
+      coverImage: "",
+      publishedYear: undefined,
+      genre: "",
+      copies: 1,
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      // Add book to the library (in a real app, this would be an API call)
+      console.log("Book added:", values);
+      
+      toast({
+        title: "Book Added",
+        description: `"${values.title}" has been added to the library.`,
+      });
+      
+      // Reset form
+      form.reset();
+      setIsSubmitting(false);
+    }, 1000);
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <h2 className="text-2xl font-bold mb-6">Add New Book</h2>
+      
+      <Card className="p-6">
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="md:w-1/3">
+            <div className="h-72 w-full border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center text-gray-500">
+              {form.watch("coverImage") ? (
+                <img 
+                  src={form.watch("coverImage")} 
+                  alt="Book cover preview" 
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.src = "";
+                    form.setError("coverImage", { 
+                      type: "manual", 
+                      message: "Failed to load image" 
+                    });
+                  }}
+                />
+              ) : (
+                <>
+                  <BookIcon className="h-16 w-16 mb-2" />
+                  <p>Cover image preview</p>
+                </>
+              )}
+            </div>
+          </div>
+          
+          <div className="md:w-2/3">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Book title" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="author"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Author</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Book author" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="publishedYear"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Published Year</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="Publication year" 
+                            {...field}
+                            value={field.value || ""}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? undefined : parseInt(e.target.value);
+                              field.onChange(value);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="genre"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Genre</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Book genre" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="coverImage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cover Image URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com/image.jpg" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="copies"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Number of Copies</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1"
+                          placeholder="Number of copies" 
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Book description" 
+                          className="min-h-32" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isSubmitting}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {isSubmitting ? "Adding Book..." : "Add Book"}
+                </Button>
+              </form>
+            </Form>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+export default AddBookForm;
