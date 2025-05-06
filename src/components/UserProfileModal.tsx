@@ -12,6 +12,7 @@ import UserProfile from "./UserProfile";
 import { borrowBook, reserveBook } from "@/services/userService";
 import { useToast } from "@/hooks/use-toast";
 import { Book } from "@/types/book";
+import { format } from "date-fns";
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ interface UserProfileModalProps {
   user: User | null;
   actionType: "reserve" | "borrow" | null;
   book: Book | null;
+  borrowDate?: Date;
+  returnDate?: Date;
 }
 
 const UserProfileModal = ({ 
@@ -26,7 +29,9 @@ const UserProfileModal = ({
   onClose, 
   user, 
   actionType,
-  book
+  book,
+  borrowDate,
+  returnDate
 }: UserProfileModalProps) => {
   const { toast } = useToast();
 
@@ -34,11 +39,12 @@ const UserProfileModal = ({
     if (!user || !book || !actionType) return;
     
     if (actionType === "borrow") {
+      const dueDate = returnDate ? returnDate : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days from now
       const result = borrowBook(user.id, book.id);
       if (result) {
         toast({
           title: "Book Borrowed",
-          description: `"${book.title}" has been borrowed successfully. Due date: ${new Date(result.dueDate).toLocaleDateString()}`,
+          description: `"${book.title}" has been borrowed successfully. Due date: ${format(dueDate, 'MMM dd, yyyy')}`,
         });
         onClose();
       }
@@ -47,7 +53,7 @@ const UserProfileModal = ({
       if (result) {
         toast({
           title: "Book Reserved",
-          description: `"${book.title}" has been reserved successfully. Reservation expires: ${new Date(result.expirationDate).toLocaleDateString()}`,
+          description: `"${book.title}" has been reserved successfully. Reservation expires: ${format(new Date(result.expirationDate), 'MMM dd, yyyy')}`,
         });
         onClose();
       }
@@ -66,6 +72,8 @@ const UserProfileModal = ({
           onBorrow={actionType === "borrow" ? handleAction : undefined} 
           onReserve={actionType === "reserve" ? handleAction : undefined} 
           bookTitle={book?.title}
+          borrowDate={borrowDate}
+          returnDate={returnDate}
         />
         
         <DialogFooter>

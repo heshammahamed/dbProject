@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { User, UserPlus } from "lucide-react";
 import ExistingUserForm from "./ExistingUserForm";
 import NewUserForm from "./NewUserForm";
+import { addDays, format } from "date-fns";
 
 interface UserSelectionModalProps {
   isOpen: boolean;
@@ -31,9 +32,13 @@ const UserSelectionModal = ({
   book 
 }: UserSelectionModalProps) => {
   const [userMode, setUserMode] = useState<UserMode>(null);
+  const [borrowDate, setBorrowDate] = useState<Date>(new Date());
+  const [returnDate, setReturnDate] = useState<Date>(addDays(new Date(), 14)); // Default to 2 weeks
 
   const resetState = () => {
     setUserMode(null);
+    setBorrowDate(new Date());
+    setReturnDate(addDays(new Date(), 14));
   };
 
   const handleClose = () => {
@@ -57,6 +62,19 @@ const UserSelectionModal = ({
               <p className="mb-4 text-center text-muted-foreground">
                 {getActionText()} "{book?.title}" for:
               </p>
+              
+              {actionType === "borrow" && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                  <p className="text-sm font-medium mb-1">Borrow Details:</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <span className="text-muted-foreground">Borrow Date:</span>
+                    <span>{format(borrowDate, 'MMM dd, yyyy')}</span>
+                    <span className="text-muted-foreground">Return By:</span>
+                    <span>{format(returnDate, 'MMM dd, yyyy')}</span>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                   className="flex-1 flex flex-col items-center py-6 h-auto"
@@ -88,6 +106,8 @@ const UserSelectionModal = ({
             onSubmit={onComplete}
             actionType={actionType}
             book={book}
+            borrowDate={borrowDate}
+            returnDate={returnDate}
           />
         ) : (
           <NewUserForm 
@@ -95,6 +115,8 @@ const UserSelectionModal = ({
             onSubmit={onComplete}
             actionType={actionType}
             book={book}
+            borrowDate={borrowDate}
+            returnDate={returnDate}
           />
         )}
       </DialogContent>

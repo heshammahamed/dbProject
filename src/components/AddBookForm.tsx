@@ -15,15 +15,20 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Book as BookIcon, Plus } from "lucide-react";
+import { Book as BookIcon, Plus, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { addBook } from "@/services/bookService";
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   author: z.string().min(1, { message: "Author is required" }),
   description: z.string().min(1, { message: "Description is required" }),
   coverImage: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal("")),
-  publishedYear: z.coerce.number().int().min(1, { message: "Year must be a positive number" }).optional(),
+  publishedYear: z.date().optional(),
   genre: z.string().optional(),
   copies: z.coerce.number().int().min(1, { message: "Copies must be at least 1" }),
 });
@@ -45,13 +50,19 @@ const AddBookForm = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      // Add book to the library (in a real app, this would be an API call)
-      console.log("Book added:", values);
+    try {
+      // Prepare data for API
+      const bookData = {
+        title: values.title,
+        authorId: 1, // Default authorId since we don't have author selection yet
+        categoryId: 1, // Default categoryId since we don't have category selection yet
+        totalCopies: values.copies
+      };
+      
+      const result = await addBook(bookData);
       
       toast({
         title: "Book Added",
@@ -60,8 +71,16 @@ const AddBookForm = () => {
       
       // Reset form
       form.reset();
+    } catch (error) {
+      console.error("Error adding book:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add the book. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -130,20 +149,38 @@ const AddBookForm = () => {
                     control={form.control}
                     name="publishedYear"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Published Year</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="Publication year" 
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const value = e.target.value === "" ? undefined : parseInt(e.target.value);
-                              field.onChange(value);
-                            }}
-                          />
-                        </FormControl>
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Publication Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Select date</span>
+                                )}
+                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date > new Date()}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}

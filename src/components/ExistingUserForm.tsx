@@ -11,19 +11,24 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { getUserById } from "@/services/userService";
 import UserProfileModal from "./UserProfileModal";
+import { format } from "date-fns";
 
 interface ExistingUserFormProps {
   onCancel: () => void;
   onSubmit: (userId: string) => void;
   actionType: "reserve" | "borrow" | null;
   book: Book;
+  borrowDate?: Date;
+  returnDate?: Date;
 }
 
 const ExistingUserForm = ({ 
   onCancel, 
   onSubmit, 
   actionType, 
-  book 
+  book,
+  borrowDate,
+  returnDate
 }: ExistingUserFormProps) => {
   const [userId, setUserId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,6 +86,18 @@ const ExistingUserForm = ({
             Enter the ID of the existing member to {getActionText().toLowerCase()} "{book?.title}":
           </p>
           
+          {actionType === "borrow" && borrowDate && returnDate && (
+            <div className="mb-4 p-3 bg-gray-50 rounded-md">
+              <p className="text-sm font-medium mb-1">Borrow Details:</p>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <span className="text-muted-foreground">Borrow Date:</span>
+                <span>{format(borrowDate, 'MMM dd, yyyy')}</span>
+                <span className="text-muted-foreground">Return By:</span>
+                <span>{format(returnDate, 'MMM dd, yyyy')}</span>
+              </div>
+            </div>
+          )}
+          
           <Input
             type="text"
             value={userId}
@@ -116,6 +133,8 @@ const ExistingUserForm = ({
           user={getUserById(userId)}
           actionType={actionType}
           book={book}
+          borrowDate={borrowDate}
+          returnDate={returnDate}
         />
       )}
     </>
