@@ -22,17 +22,24 @@ const EditBooksTab = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const { toast } = useToast();
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!query.trim()) return;
     
     setIsSearching(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const results = searchBooks(query);
+    try {
+      const results = await searchBooks(query);
       setBooks(results);
+    } catch (error) {
+      console.error("Error searching books:", error);
+      toast({
+        title: "Error",
+        description: "Failed to search books. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsSearching(false);
-    }, 1000);
+    }
   };
 
   const handleDelete = (book: Book) => {

@@ -4,11 +4,17 @@ import BookCard from "./BookCard";
 
 interface BooksListProps {
   books: Book[];
+  searchQuery?: string;
 }
 
-const BooksList = ({ books }: BooksListProps) => {
-  if (books.length === 0) {
-    return null;
+const BooksList = ({ books, searchQuery }: BooksListProps) => {
+  // Check if books is undefined or empty
+  if (!books || books.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        {searchQuery ? "No books found matching your search" : "Search for books to see results"}
+      </div>
+    );
   }
 
   return (

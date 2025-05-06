@@ -1,16 +1,40 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import BooksList from "@/components/BooksList";
 import { Button } from "@/components/ui/button";
 import { Book, Library } from "lucide-react";
+import { searchBooks } from "@/services/bookService";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [books, setBooks] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    
+    if (!query.trim()) {
+      setBooks([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    
+    // Use async/await pattern for the search
+    const fetchBooks = async () => {
+      try {
+        const results = await searchBooks(query);
+        setBooks(results);
+      } catch (error) {
+        console.error("Error searching books:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+    
+    fetchBooks();
   };
 
   return (
@@ -37,13 +61,13 @@ const Index = () => {
             Search our collection of books by title, author, or genre.
           </p>
           <div className="max-w-2xl mx-auto">
-            <SearchBar onSearch={handleSearch} />
+            <SearchBar onSearch={handleSearch} isSearching={isSearching} />
           </div>
         </div>
       </div>
 
       <main className="container mx-auto py-12 px-4">
-        <BooksList searchQuery={searchQuery} />
+        <BooksList books={books} searchQuery={searchQuery} />
       </main>
     </div>
   );
