@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getAllBorrowedBooks, returnBook } from "@/services/userService";
+import { getAllBorrowedBooks, returnBook } from "@/services/bookService";
 import { BorrowedBook } from "@/types/borrowing";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,42 +24,48 @@ const BorrowedBooksTab = () => {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
+        console.log('Starting to fetch books...'); // Debug log
         const books = await getAllBorrowedBooks();
+        console.log('Fetched books:', books); // Debug log
         setBorrowedBooks(books);
       } catch (error) {
-        console.error("Error fetching borrowed books:", error);
+        console.error('Fetch error details:', error); // More detailed error
         toast({
           title: "Error",
-          description: "Failed to load borrowed books. Please try again.",
+          description: error instanceof Error ? error.message : "Failed to load books",
           variant: "destructive"
         });
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     fetchBooks();
   }, [toast]);
 
-  const handleReturnBook = (borrowId: string) => {
-    const result = returnBook(borrowId);
-    
-    if (result) {
+
+  const handleReturnBook = async (borrowId: string) => {
+    try {
+      const returnedBook = await returnBook(borrowId);
+      
       toast({
         title: "Book Returned",
-        description: `"${result.book.title}" has been successfully marked as returned.`,
+        description: `"${returnedBook.book.title}" has been successfully marked as returned.`,
       });
       
       // Update local state
       setBorrowedBooks(prev => 
         prev.map(item => 
-          item.id === borrowId ? { ...item, returnDate: new Date() } : item
+          item.id === borrowId ? { 
+            ...item, 
+            returnDate: returnedBook.returnDate 
+          } : item
         )
       );
-    } else {
+    } catch (error) {
       toast({
-        title: "Action not available",
-        description: "This feature is currently in development with the API.",
+        title: "Error",
+        description: error.message,
         variant: "destructive"
       });
     }

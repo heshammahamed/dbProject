@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Book } from "@/types/book";
 import {
@@ -9,10 +8,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { User, UserPlus } from "lucide-react";
+import { User, UserPlus, Calendar } from "lucide-react";
 import ExistingUserForm from "./ExistingUserForm";
 import NewUserForm from "./NewUserForm";
 import { addDays, format } from "date-fns";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 
 interface UserSelectionModalProps {
   isOpen: boolean;
@@ -32,12 +39,10 @@ const UserSelectionModal = ({
   book 
 }: UserSelectionModalProps) => {
   const [userMode, setUserMode] = useState<UserMode>(null);
-  const [borrowDate, setBorrowDate] = useState<Date>(new Date());
   const [returnDate, setReturnDate] = useState<Date>(addDays(new Date(), 14)); // Default to 2 weeks
 
   const resetState = () => {
     setUserMode(null);
-    setBorrowDate(new Date());
     setReturnDate(addDays(new Date(), 14));
   };
 
@@ -48,6 +53,11 @@ const UserSelectionModal = ({
 
   const getActionText = () => {
     return actionType === "reserve" ? "Reserve" : "Borrow";
+  };
+  
+  const handleNewUserSubmit = (userId: string) => {
+    // Just reset to selection screen instead of completing the action
+    setUserMode(null);
   };
 
   return (
@@ -64,13 +74,36 @@ const UserSelectionModal = ({
               </p>
               
               {actionType === "borrow" && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                  <p className="text-sm font-medium mb-1">Borrow Details:</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <span className="text-muted-foreground">Borrow Date:</span>
-                    <span>{format(borrowDate, 'MMM dd, yyyy')}</span>
-                    <span className="text-muted-foreground">Return By:</span>
-                    <span>{format(returnDate, 'MMM dd, yyyy')}</span>
+                <div className="mb-6 p-4 bg-gray-50 rounded-md">
+                  <p className="text-sm font-medium mb-3">Borrow Details:</p>
+                  
+                  <div className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="returnDate">Return By:</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="returnDate"
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !returnDate && "text-muted-foreground"
+                            )}
+                          >
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {returnDate ? format(returnDate, 'MMM dd, yyyy') : "Select date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={returnDate}
+                            onSelect={(date) => date && setReturnDate(date)}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                 </div>
               )}
@@ -106,16 +139,14 @@ const UserSelectionModal = ({
             onSubmit={onComplete}
             actionType={actionType}
             book={book}
-            borrowDate={borrowDate}
             returnDate={returnDate}
           />
         ) : (
           <NewUserForm 
             onCancel={() => setUserMode(null)} 
-            onSubmit={onComplete}
+            onSubmit={handleNewUserSubmit}
             actionType={actionType}
             book={book}
-            borrowDate={borrowDate}
             returnDate={returnDate}
           />
         )}

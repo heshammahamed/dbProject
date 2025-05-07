@@ -29,9 +29,27 @@ const mockUsers: User[] = [
   }
 ];
 
-export const getUserById = (userId: string): User | undefined => {
-  return mockUsers.find(user => user.id === userId);
+export const cancelReservation = async (reservationId: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`http://localhost:9000/reservations/${reservationId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to cancel reservation');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error cancelling reservation:', error);
+    throw error;
+  }
 };
+
 
 export const getUserBorrowedBooks = async (userId: string): Promise<BorrowedBook[]> => {
   try {
@@ -98,7 +116,7 @@ export const getUserReservedBooks = async (userId: string): Promise<ReservedBook
 
 export const getAllBorrowedBooks = async (): Promise<BorrowedBook[]> => {
   try {
-    const response = await fetch(`${API_URL}/borrow-records`);
+    const response = await fetch(`${API_URL}/borrows`);
     
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
@@ -161,12 +179,12 @@ export const getAllReservedBooks = async (): Promise<ReservedBook[]> => {
       const lastName = nameParts.slice(1).join(' ');
       
       const user: User = {
-        id: `USER-${item.ReservationID}`, // Using ReservationID as user ID for now
+        id: item.MemberID.toString(), // Using actual MemberID from the database
         firstName,
         lastName,
         email: item.MemberEmail,
-        joinDate: new Date(), // Default date
-        isBanned: false
+        joinDate: new Date(), // You might want to get this from the Members table
+        isBanned: false // You might want to get this from the Members table
       };
       
       return {
@@ -180,7 +198,6 @@ export const getAllReservedBooks = async (): Promise<ReservedBook[]> => {
         },
         user,
         reservationDate: new Date(item.ReservationDate),
-        expirationDate: new Date(new Date(item.ReservationDate).getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days from reservation
       };
     });
   } catch (error) {
@@ -189,10 +206,6 @@ export const getAllReservedBooks = async (): Promise<ReservedBook[]> => {
   }
 };
 
-// The remaining functions use mock data for now
-export const getAllUsers = (): User[] => {
-  return mockUsers;
-};
 
 export const addNewUser = (firstName: string, lastName: string): User => {
   const newUser: User = {
@@ -228,44 +241,72 @@ export const borrowBook = (userId: string, bookId: string): BorrowedBook | null 
   const newBorrow: BorrowedBook = {
     id: `BORROW-${Date.now()}`,
     book: mockBook,
-    user,
+    user: {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
     borrowDate,
-    dueDate
+    dueDate,
+    returnDate: undefined
   };
   
   return newBorrow;
 };
 
-export const reserveBook = (userId: string, bookId: string): ReservedBook | null => {
-  const user = getUserById(userId);
-  if (!user) return null;
-  
-  // In a real app, we would call the API to create a reservation
-  const reservationDate = new Date();
-  const expirationDate = new Date();
-  expirationDate.setDate(expirationDate.getDate() + 7); // 7 days reservation period
-  
-  // Simulating reservation - in a real app we would fetch the book by ID
-  const mockBook = {
-    id: bookId,
-    title: "Sample Book",
-    author: "Sample Author",
-    description: "This is a sample description for the reserved book.",
-    coverImage: "https://images.unsplash.com/photo-1589998059171-988d887df646?q=80&w=2076&auto=format&fit=crop&ixlib=rb-4.0.3"
-  };
-  
-  const newReservation: ReservedBook = {
-    id: `RESERVE-${Date.now()}`,
-    book: mockBook,
-    user,
-    reservationDate,
-    expirationDate
-  };
-  
-  return newReservation;
+export const reserveBook = async (userId: string, bookId: string): Promise<ReservedBook | null> => {
+  try {
+    const user = await getUserById(userId);
+    if (!user) return null;
+    
+    // In a real app, you would call your reservation API here
+    const reservationDate = new Date();
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 7); // 7 days reservation period
+    
+    // This should be replaced with actual book data from your API
+    const mockBook = {
+      id: bookId,
+      title: "Sample Book",
+      author: "Sample Author",
+      description: "This is a sample description for the reserved book.",
+      coverImage: "https://images.unsplash.com/photo-1589998059171-988d887df646?q=80&w=2076&auto=format&fit=crop&ixlib=rb-4.0.3"
+    };
+    
+    const newReservation: ReservedBook = {
+      id: `RESERVE-${Date.now()}`,
+      book: mockBook,
+      user, // Now properly typed as User
+      reservationDate,
+      expirationDate
+    };
+    
+    return newReservation;
+  } catch (error) {
+    console.error('Error creating reservation:', error);
+    return null;
+  }
+};
+export const getAllUsers = async (): Promise<User[]> => {
+  try {
+    const response = await fetch('http://localhost:9000/allUser');
+    if (!response.ok) throw new Error('Failed to fetch users');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
 };
 
-export const returnBook = (borrowId: string): BorrowedBook | null => {
-  // In a real app, we would call the API to update the return date
-  return null;
+export const getUserById = async (userId: string): Promise<User | undefined> => {
+  try {
+    const response = await fetch(`http://localhost:9000/users/${userId}`);
+    if (response.status === 404) return undefined;
+    if (!response.ok) throw new Error('Failed to fetch user');
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching user ${userId}:`, error);
+    throw error;
+  }
 };

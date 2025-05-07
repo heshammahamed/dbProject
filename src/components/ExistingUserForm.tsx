@@ -27,7 +27,6 @@ const ExistingUserForm = ({
   onSubmit, 
   actionType, 
   book,
-  borrowDate,
   returnDate
 }: ExistingUserFormProps) => {
   const [userId, setUserId] = useState("");
@@ -35,32 +34,63 @@ const ExistingUserForm = ({
   const [showUserProfile, setShowUserProfile] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!userId.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid member ID",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please enter a valid member ID", variant: "destructive" });
       return;
     }
-
+  
     setIsSubmitting(true);
     
-    // Look up the user
-    const user = getUserById(userId);
-    
-    if (user) {
-      setShowUserProfile(true);
-      setIsSubmitting(false);
-    } else {
+    try {
+      const endpoint = actionType === 'borrow' ? 'http://localhost:9000/borrow' : 'http://localhost:9000/reserve';
+      const payload = {
+        memberId: userId,
+        bookId: book.id,
+        ...(actionType === 'borrow' && {
+          returnDate: format(returnDate, 'yyyy-MM-dd')
+        })
+      };
+  
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        if (data.code === 'MEMBER_BANNED') {
+          throw new Error('This member is currently banned');
+        }
+        if (data.code === 'BOOK_UNAVAILABLE') {
+          throw new Error('No available copies of this book');
+        }
+        throw new Error(data.error || 'Operation failed');
+      }
+  
       toast({
-        title: "User Not Found",
-        description: "No member found with this ID",
+        title: "Success",
+        description: actionType === 'borrow' 
+          ? `Book borrowed until ${format(returnDate, 'MMM dd, yyyy')}`
+          : "Book reserved successfully",
+        variant: "default",
+      });
+  
+      setTimeout(() => {
+        onSubmit(userId);
+      }, 2000);
+  
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -86,12 +116,12 @@ const ExistingUserForm = ({
             Enter the ID of the existing member to {getActionText().toLowerCase()} "{book?.title}":
           </p>
           
-          {actionType === "borrow" && borrowDate && returnDate && (
+          {actionType === "borrow" && returnDate && (
             <div className="mb-4 p-3 bg-gray-50 rounded-md">
               <p className="text-sm font-medium mb-1">Borrow Details:</p>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <span className="text-muted-foreground">Borrow Date:</span>
-                <span>{format(borrowDate, 'MMM dd, yyyy')}</span>
+                <span>{new Date().toISOString().split('T')[0]}</span>
                 <span className="text-muted-foreground">Return By:</span>
                 <span>{format(returnDate, 'MMM dd, yyyy')}</span>
               </div>
@@ -133,7 +163,6 @@ const ExistingUserForm = ({
           user={getUserById(userId)}
           actionType={actionType}
           book={book}
-          borrowDate={borrowDate}
           returnDate={returnDate}
         />
       )}

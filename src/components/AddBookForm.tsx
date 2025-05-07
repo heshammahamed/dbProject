@@ -57,9 +57,13 @@ const AddBookForm = () => {
       // Prepare data for API
       const bookData = {
         title: values.title,
-        authorId: 1, // Default authorId since we don't have author selection yet
-        categoryId: 1, // Default categoryId since we don't have category selection yet
-        totalCopies: values.copies
+        authorId: values.author, // Default authorId since we don't have author selection yet
+        categoryId: values.genre || "Fiction" , // Default categoryId since we don't have category selection yet
+        totalCopies: values.copies,
+        PublicationDate : values.publishedYear 
+        ? new Date(values.publishedYear).toISOString().split('T')[0] 
+        : "2005-01-01",
+        Description: values.description,
       };
       
       const result = await addBook(bookData);

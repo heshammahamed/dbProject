@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getAllReservedBooks } from "@/services/userService";
+import { getAllReservedBooks , cancelReservation } from "@/services/userService";
 import { ReservedBook } from "@/types/borrowing";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,16 +41,26 @@ const ReservedBooksTab = () => {
     fetchBooks();
   }, [toast]);
 
-  const handleCancelReservation = (reservationId: string) => {
-    // In a real app, we would call an API to cancel the reservation
-    toast({
-      title: "Action not available",
-      description: "This feature is currently in development with the API.",
-      variant: "destructive"
-    });
-    
-    // For now, just update UI
-    setReservedBooks(prev => prev.filter(item => item.id !== reservationId));
+  const handleCancelReservation = async (reservationId: string) => {
+    try {
+      const success = await cancelReservation(reservationId);
+      
+      if (success) {
+        toast({
+          title: "Reservation Cancelled",
+          description: "The reservation has been successfully cancelled.",
+        });
+        
+        // Update UI
+        setReservedBooks(prev => prev.filter(item => item.id !== reservationId));
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const getReservationStatus = (reservation: ReservedBook) => {
@@ -80,10 +90,10 @@ const ReservedBooksTab = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Reservation ID</TableHead>
                   <TableHead>Book</TableHead>
                   <TableHead>Member</TableHead>
                   <TableHead>Reservation Date</TableHead>
-                  <TableHead>Expiration Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -94,15 +104,15 @@ const ReservedBooksTab = () => {
                   
                   return (
                     <TableRow key={reservation.id}>
+                      <TableCell >
+                        {reservation.id}
+                      </TableCell>
                       <TableCell className="font-medium">{reservation.book.title}</TableCell>
                       <TableCell>
                         {reservation.user.firstName} {reservation.user.lastName}
                         <div className="text-xs text-muted-foreground">ID: {reservation.user.id}</div>
                       </TableCell>
                       <TableCell>{format(reservation.reservationDate, "PP")}</TableCell>
-                      <TableCell className={reservation.expirationDate < new Date() ? "text-destructive" : ""}>
-                        {format(reservation.expirationDate, "PP")}
-                      </TableCell>
                       <TableCell>
                         <Badge variant={status.variant}>
                           {status.label}

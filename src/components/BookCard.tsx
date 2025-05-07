@@ -19,10 +19,10 @@ const BookCard = ({ book }: BookCardProps) => {
         onClick={() => setShowDetails(true)}
       >
         <div className="p-4 flex justify-center bg-library-50">
-          {book.coverImage ? (
+        {book.coverImage ? (
             <img 
               src={book.coverImage} 
-              alt={`${book.title} cover`} 
+              alt={`${book.author} cover`} 
               className="h-48 object-contain rounded-sm"
             />
           ) : (

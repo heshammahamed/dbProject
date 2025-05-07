@@ -25,24 +25,30 @@ interface NewUserFormProps {
   onSubmit: (userId: string) => void;
   actionType: "reserve" | "borrow" | null;
   book: Book;
+  returnDate?: Date;
+  borrowDate?: Date;
 }
 
 interface NewUser {
   firstName: string;
   lastName: string;
-  joinDate: Date | undefined;
+  phoneNumber: string;
+  email: string;
 }
 
 const NewUserForm = ({ 
   onCancel, 
   onSubmit, 
   actionType, 
-  book 
+  book,
+  returnDate ,
+  borrowDate,
 }: NewUserFormProps) => {
   const [user, setUser] = useState<NewUser>({
     firstName: "",
     lastName: "",
-    joinDate: new Date(),
+    phoneNumber: "",
+    email: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -56,10 +62,9 @@ const NewUserForm = ({
   };
 
   const validateForm = () => {
-    return user.firstName.trim() && user.lastName.trim() && user.joinDate;
+    return user.firstName.trim() && user.lastName.trim() && user.email.trim() && user.phoneNumber.trim();
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -70,23 +75,76 @@ const NewUserForm = ({
       });
       return;
     }
-
+  
     setIsSubmitting(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
-      const newUserId = `USER-${Date.now()}`;
-      setShowSuccess(true);
-      setIsSubmitting(false);
+    try {
+      const response = await fetch(`http://localhost:9000/api/members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: user.firstName,
+          secondName: user.lastName,
+          email: user.email,
+          phone: user.phoneNumber
+        }),
+      });
+  
+      // First check if response exists
+      if (!response) {
+        throw new Error('No response from server');
+      }
+  
+      // Check for empty response
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+  
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add member');
+      }
+  
+      // setShowSuccess(true);
+      // toast({
+      //   title: "Success",
+      //   description: "Member added successfully",
+      //   variant: "default",
+      // });
       
-      // After showing success message, automatically continue
-      setTimeout(() => {
-        setShowSuccess(false);
-        onSubmit(newUserId);
-      }, 2000);
-    }, 800);
-  };
+      // setTimeout(() => {
+      //   setShowSuccess(false);
+      //   onSubmit(data.member.id.toString());
+      // }, 2000);
 
+      //new
+      setIsSubmitting(true);
+    
+      // Simulate API call with timeout
+      setTimeout(() => {
+        const newUserId = `USER-${Date.now()}`;
+        setShowSuccess(true);
+        setIsSubmitting(false);
+        
+        // After showing success message, return to selection screen
+        setTimeout(() => {
+          setShowSuccess(false);
+          onSubmit(newUserId);
+        }, 1500);
+      }, 800);
+      //end
+  
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to submit form',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
   const getActionText = () => {
     return actionType === "reserve" ? "Reserve" : "Borrow";
   };
@@ -108,7 +166,7 @@ const NewUserForm = ({
               New member {user.firstName} {user.lastName} has been successfully added!
             </p>
           </div>
-          <p className="text-sm text-muted-foreground">Continuing to {getActionText().toLowerCase()} the book...</p>
+          <p className="text-sm text-muted-foreground">Returning to action selection...</p>
         </div>
       </>
     );
@@ -123,7 +181,7 @@ const NewUserForm = ({
       <form onSubmit={handleSubmit}>
         <div className="py-4 space-y-4">
           <p className="mb-4 text-sm text-muted-foreground">
-            Fill in the details to register a new member and {getActionText().toLowerCase()} "{book?.title}":
+          Fill in the details to register a new member
           </p>
           
           <div className="grid gap-4">
@@ -148,33 +206,29 @@ const NewUserForm = ({
                 required
               />
             </div>
-            
+
             <div className="grid gap-2">
-              <Label htmlFor="joinDate">Join Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="joinDate"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !user.joinDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {user.joinDate ? format(user.joinDate, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={user.joinDate}
-                    onSelect={(date) => updateUserField("joinDate", date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="lastName">Email</Label>
+              <Input
+                id="email"
+                value={user.email}
+                onChange={(e) => updateUserField("email", e.target.value)}
+                placeholder="Email"
+                required
+              />
             </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="lastName">Phone Number</Label>
+              <Input
+                id="phone Number"
+                value={user.phoneNumber}
+                onChange={(e) => updateUserField("phoneNumber", e.target.value)}
+                placeholder="Phone number"
+                required
+              />
+            </div>
+            
           </div>
         </div>
         
@@ -191,7 +245,7 @@ const NewUserForm = ({
             type="submit" 
             disabled={isSubmitting || !validateForm()}
           >
-            {isSubmitting ? "Processing..." : "Submit"}
+            {isSubmitting ? "Processing..." : "Add Member"}
           </Button>
         </DialogFooter>
       </form>

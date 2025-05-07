@@ -199,10 +199,6 @@ const UserProfile = ({ user, onBorrow, onReserve, bookTitle }: UserProfileProps)
                           <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
                             <span className="text-muted-foreground">Reserved:</span>
                             <span>{format(item.reservationDate, "PPP")}</span>
-                            <span className="text-muted-foreground">Expires:</span>
-                            <span className={item.expirationDate < new Date() ? "text-destructive font-medium" : ""}>
-                              {format(item.expirationDate, "PPP")}
-                            </span>
                           </div>
                         </div>
                         <div>

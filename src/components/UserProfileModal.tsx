@@ -72,8 +72,6 @@ const UserProfileModal = ({
           onBorrow={actionType === "borrow" ? handleAction : undefined} 
           onReserve={actionType === "reserve" ? handleAction : undefined} 
           bookTitle={book?.title}
-          borrowDate={borrowDate}
-          returnDate={returnDate}
         />
         
         <DialogFooter>
