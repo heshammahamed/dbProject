@@ -68,40 +68,6 @@ const MembersTab = () => {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Manage Members</h2>
       
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Search member by ID..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <Button 
-              onClick={handleSearch} 
-              disabled={isSearching || !query.trim()}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              {isSearching ? "Searching..." : "Search"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {user ? (
-        <Card>
-          <CardContent className="pt-6">
-            <UserProfile user={user} />
-          </CardContent>
-        </Card>
-      ) : (
-        query.trim() && !isSearching && (
-          <div className="text-center py-8 text-muted-foreground">
-            No member found with this ID
-          </div>
-        )
-      )}
-      
       {/* List of all members */}
       <h3 className="text-xl font-bold mt-8">All Members</h3>
       {isLoadingUsers ? (

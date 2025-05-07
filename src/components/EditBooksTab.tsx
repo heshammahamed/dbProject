@@ -122,13 +122,6 @@ const EditBooksTab = () => {
                       <div className="flex justify-end gap-2">
                         <Button 
                           size="sm" 
-                          variant="outline"
-                          onClick={() => handleEdit(book)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
                           variant="destructive"
                           onClick={() => handleDelete(book)}
                         >
